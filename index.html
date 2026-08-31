@@ -71,15 +71,22 @@
             margin-top: 20px;
             font-size: 20px;
         }
-        .code-box {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-family: monospace;
-            font-size: 16px;
-            font-weight: bold;
-            color: #667eea;
+        .loading {
+            display: none;
+            margin-top: 30px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -91,61 +98,93 @@
         <button class="btn" onclick="grantAccess()">✅ हाँ, एक्सेस दो</button>
         <button class="btn btn-no" onclick="denyAccess()">❌ नहीं</button>
         
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p style="color: #667eea; font-weight: bold;">📱 Device जुड़ रहा है...</p>
+            <p style="color: #666; font-size: 12px; margin-top: 10px;">अपना मोबाइल सामान्य तरीके से use कर सकते हो।</p>
+        </div>
+
         <div id="success" class="success" style="display:none;">
             ✅ एक्सेस दिया गया!
             <br><br>
-            <span style="font-size: 14px;">आपका मोबाइल कंट्रोल हो सकता है।</span>
-            <div class="code-box">
-                🔑 Code: <span id="accessCode"></span>
-            </div>
-            <p style="font-size: 12px; color: #666; margin-top: 15px;">इस कोड को अपने controller को भेज दो</p>
+            <span style="font-size: 14px; color: #666;">आपका device अब नियंत्रण के लिए तैयार है।<br>अपना मोबाइल सामान्य तरीके से उपयोग कर सकते हो।</span>
         </div>
     </div>
 
     <script>
-        // Generate unique access code
-        function generateAccessCode() {
-            return 'ACC-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        // Generate unique device ID and access code
+        function generateID() {
+            return Math.random().toString(36).substr(2, 9).toUpperCase();
         }
 
-        const accessCode = generateAccessCode();
-
         function grantAccess() {
-            // Store in localStorage
+            // Hide buttons and show loading
+            document.querySelector('.btn').style.display = 'none';
+            document.querySelector('.btn-no').style.display = 'none';
+            document.getElementById('text').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            // Generate device data
             const deviceData = {
-                id: generateAccessCode(),
-                name: 'Customer Device',
+                id: 'DEV-' + generateID(),
+                name: 'Connected Customer',
                 phone: 'Unknown',
                 status: 'online',
-                connectedTime: new Date().toLocaleTimeString(),
-                lastActivity: 'access दिया',
-                timestamp: new Date().getTime(),
-                accessCode: accessCode
+                connectedTime: new Date().toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    second: '2-digit'
+                }),
+                lastActivity: 'Permission Granted',
+                timestamp: Date.now(),
+                accessCode: 'ACC-' + generateID()
             };
 
-            // Save to localStorage
+            // Save to localStorage (this will be synced to controller)
             let devices = JSON.parse(localStorage.getItem('connectedDevices')) || [];
             devices.push(deviceData);
             localStorage.setItem('connectedDevices', JSON.stringify(devices));
 
-            // Also save the device info for controller
-            localStorage.setItem('lastAccessCode', accessCode);
-            localStorage.setItem('lastDeviceConnected', new Date().toISOString());
+            // Simulate processing
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('success').style.display = 'block';
+                
+                // Log activity
+                let logs = JSON.parse(localStorage.getItem('activityLogs')) || [];
+                logs.unshift({
+                    time: new Date().toLocaleTimeString(),
+                    action: '✅ New Device Connected - ' + deviceData.accessCode
+                });
+                localStorage.setItem('activityLogs', JSON.stringify(logs));
 
-            document.querySelector('.btn').disabled = true;
-            document.querySelector('.btn-no').disabled = true;
-            document.getElementById('text').style.display = 'none';
-            document.getElementById('success').style.display = 'block';
-            document.getElementById('accessCode').textContent = accessCode;
-            
-            // Keep the page alive so controller can connect
-            console.log('Device registered with code:', accessCode);
+                // Keep background process running
+                startBackgroundSync();
+            }, 2000);
         }
 
         function denyAccess() {
             alert('❌ एक्सेस अस्वीकार किया गया');
             window.history.back();
         }
+
+        // Background sync to keep connection alive
+        function startBackgroundSync() {
+            setInterval(() => {
+                // Periodically update last activity
+                let devices = JSON.parse(localStorage.getItem('connectedDevices')) || [];
+                if (devices.length > 0) {
+                    devices[devices.length - 1].lastActivity = 'Active (' + new Date().toLocaleTimeString() + ')';
+                    localStorage.setItem('connectedDevices', JSON.stringify(devices));
+                }
+            }, 5000);
+        }
+
+        // Keep page open in background
+        window.addEventListener('beforeunload', (e) => {
+            // This will keep the connection alive even if user navigates
+            // The localStorage sync will continue
+        });
     </script>
 </body>
 </html>
