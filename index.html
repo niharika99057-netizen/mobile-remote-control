@@ -71,6 +71,16 @@
             margin-top: 20px;
             font-size: 20px;
         }
+        .code-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -85,25 +95,56 @@
             ✅ एक्सेस दिया गया!
             <br><br>
             <span style="font-size: 14px;">आपका मोबाइल कंट्रोल हो सकता है।</span>
+            <div class="code-box">
+                🔑 Code: <span id="accessCode"></span>
+            </div>
+            <p style="font-size: 12px; color: #666; margin-top: 15px;">इस कोड को अपने controller को भेज दो</p>
         </div>
     </div>
 
     <script>
+        // Generate unique access code
+        function generateAccessCode() {
+            return 'ACC-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        }
+
+        const accessCode = generateAccessCode();
+
         function grantAccess() {
+            // Store in localStorage
+            const deviceData = {
+                id: generateAccessCode(),
+                name: 'Customer Device',
+                phone: 'Unknown',
+                status: 'online',
+                connectedTime: new Date().toLocaleTimeString(),
+                lastActivity: 'access दिया',
+                timestamp: new Date().getTime(),
+                accessCode: accessCode
+            };
+
+            // Save to localStorage
+            let devices = JSON.parse(localStorage.getItem('connectedDevices')) || [];
+            devices.push(deviceData);
+            localStorage.setItem('connectedDevices', JSON.stringify(devices));
+
+            // Also save the device info for controller
+            localStorage.setItem('lastAccessCode', accessCode);
+            localStorage.setItem('lastDeviceConnected', new Date().toISOString());
+
             document.querySelector('.btn').disabled = true;
             document.querySelector('.btn-no').disabled = true;
             document.getElementById('text').style.display = 'none';
             document.getElementById('success').style.display = 'block';
+            document.getElementById('accessCode').textContent = accessCode;
             
-            // Simulate sending access to server
-            setTimeout(() => {
-                alert('✅ आपका एक्सेस दे दिया गया है!');
-            }, 500);
+            // Keep the page alive so controller can connect
+            console.log('Device registered with code:', accessCode);
         }
 
         function denyAccess() {
             alert('❌ एक्सेस अस्वीकार किया गया');
-            window.close();
+            window.history.back();
         }
     </script>
 </body>
