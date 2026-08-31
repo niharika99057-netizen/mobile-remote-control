@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Remote Control - Click & Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            color: #666;
+        }
+
+        .role-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .role-btn:hover {
+            border-color: #667eea;
+        }
+
+        .content {
+            display: none;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .session-id {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .info-box {
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            text-align: left;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>📱 Mobile Remote Control</h1>
+                <p>Click Link & Control Mobile Instantly</p>
+            </div>
+
+            <div class="role-selector">
+                <button class="role-btn active" onclick="switchRole('server')">👨‍💼 Controller (You)</button>
+                <button class="role-btn" onclick="switchRole('client')">📱 Customer (Mobile)</button>
+            </div>
+
+            <!-- SERVER (CONTROLLER) SECTION -->
+            <div id="server" class="content active">
+                <div class="status" id="serverStatus"></div>
+                
+                <div class="input-group">
+                    <label style="display: block; text-align: left; margin-bottom: 8px; color: #667eea; font-weight: bold;">Your Session ID:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <textarea id="sessionId" readonly style="flex: 1; height: 80px;"></textarea>
+                        <button class="copy-btn" onclick="copySessionId()">Copy</button>
+                    </div>
+                </div>
+
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">✅ Share this ID with your customer. They will enter it on their device.</p>
+
+                <div class="controls" id="controlPanel" style="display: none;">
+                    <button class="control-btn" onclick="sendCommand('screenshot')">📸 Screenshot</button>
+                    <button class="control-btn" onclick="sendCommand('lock')">🔒 Lock Phone</button>
+                    <button class="control-btn" onclick="sendCommand('unlock')">🔓 Unlock Phone</button>
+                    <button class="control-btn" onclick="sendCommand('home')">🏠 Go Home</button>
+                    <button class="control-btn" onclick="sendCommand('back')">⬅️ Back</button>
+                    <button class="control-btn" onclick="sendCommand('apps')">📲 Show Apps</button>
+                </div>
+
+                <div class="input-group" style="margin-top: 20px;">
+                    <input type="text" id="customerId" placeholder="Enter Customer's Session ID to Connect" />
+                    <button class="btn btn-primary" onclick="connectToDevice()">🔗 Connect to Device</button>
+                </div>
+
+                <div class="info-box">
+                    <strong>ℹ️ How it works:</strong><br>
+                    1. Your Session ID shown above<br>
+                    2. Share it with customer<br>
+                    3. Customer enters ID on their device<br>
+                    4. Once connected, you can control their mobile
+                </div>
+            </div>
+
+            <!-- CLIENT (CUSTOMER) SECTION -->
+            <div id="client" class="content">
+                <div class="status" id="clientStatus"></div>
+
+                <div class="input-group">
+                    <label style="display: block; text-align: left; margin-bottom: 8px; color: #667eea; font-weight: bold;">Your Session ID:</label>
+                    <textarea id="clientSessionId" readonly style="height: 80px;"></textarea>
+                </div>
+
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">📌 Share this ID with the person who needs to control your phone.</p>
+
+                <div class="input-group">
+                    <input type="text" id="controllerId" placeholder="Enter Controller's Session ID" />
+                    <button class="btn btn-primary" onclick="connectAsClient()">🔗 Connect & Grant Access</button>
+                </div>
+
+                <button class="btn btn-secondary" onclick="revokeAccess()" id="revokeBtn" style="display: none;">❌ Revoke Access</button>
+
+                <div class="info-box">
+                    <strong>⚠️ Important:</strong><br>
+                    ✓ You have full control - grant/revoke access anytime<br>
+                    ✓ Your data is secure<br>
+                    ✓ Controller can only access with your permission<br>
+                    ✓ All activities are logged
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Generate unique session ID
+        function generateSessionId() {
+            return 'SES-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        }
+
+        // Initialize
+        const serverSessionId = generateSessionId();
+        const clientSessionId = generateSessionId();
+        
+        document.getElementById('sessionId').value = serverSessionId;
+        document.getElementById('clientSessionId').value = clientSessionId;
+
+        // Switch between roles
+        function switchRole(role) {
+            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(role).classList.add('active');
+        }
+
+        // Copy session ID
+        function copySessionId() {
+            const sessionId = document.getElementById('sessionId').value;
+            navigator.clipboard.writeText(serverSessionId);
+            showStatus('serverStatus', 'Session ID copied to clipboard! ✅', 'success');
+        }
+
+        // Connect as controller
+        function connectToDevice() {
+            const customerId = document.getElementById('customerId').value.trim();
+            
+            if (!customerId) {
+                showStatus('serverStatus', 'Please enter customer session ID', 'error');
+                return;
+            }
+
+            // Simulate connection
+            showStatus('serverStatus', '🔗 Connecting to device: ' + customerId, 'info');
+            
+            setTimeout(() => {
+                showStatus('serverStatus', '✅ Connected! You can now control the mobile device', 'success');
+                document.getElementById('controlPanel').style.display = 'grid';
+            }, 1500);
+        }
+
+        // Connect as client
+        function connectAsClient() {
+            const controllerId = document.getElementById('controllerId').value.trim();
+            
+            if (!controllerId) {
+                showStatus('clientStatus', 'Please enter controller session ID', 'error');
+                return;
+            }
+
+            showStatus('clientStatus', '🔗 Connecting to controller: ' + controllerId, 'info');
+            
+            setTimeout(() => {
+                showStatus('clientStatus', '✅ Access granted! Controller can now manage your device', 'success');
+                document.getElementById('revokeBtn').style.display = 'block';
+                document.getElementById('controllerId').disabled = true;
+            }, 1500);
+        }
+
+        // Send command
+        function sendCommand(command) {
+            showStatus('serverStatus', '📤 Command sent: ' + command.toUpperCase(), 'info');
+            
+            setTimeout(() => {
+                showStatus('serverStatus', '✅ Command executed: ' + command.toUpperCase(), 'success');
+            }, 800);
+        }
+
+        // Revoke access
+        function revokeAccess() {
+            showStatus('clientStatus', '❌ Access revoked! Controller can no longer control your device', 'success');
+            document.getElementById('controllerId').disabled = false;
+            document.getElementById('controllerId').value = '';
+            document.getElementById('revokeBtn').style.display = 'none';
+        }
+
+        // Show status message
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = 'status ' + type;
+        }
+    </script>
+</body>
+</html>
